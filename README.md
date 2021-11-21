@@ -1,9 +1,18 @@
 # A Proof of Concept for Solana Dapps on Flutter
 
+##### Install JS Packages with
+```
+npm install
+```
 
-Build the javascript portion with `npm run webpack`.
+##### Build JS with
+```
+npm run webpack
+```
 
-Then `flutter run -d chrome` or `flutter build web`. See Makefile.
+Then build Flutter like a normal web project with `flutter run -d chrome` or `flutter build web`.
+
+See Makefile for command shortcuts.
 
 
 ## General Approach

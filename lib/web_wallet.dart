@@ -9,7 +9,6 @@ import 'dart:convert' show utf8;
 
 final accountInfo = StateProvider<conn.AccountInfo?>((ref) => null);
 final hasPhantom = Provider<bool>((ref) => phantom.isPhantomInstalled() ?? false);
-final previousTxid = StateProvider<String>((ref) => '');
 
 /// Access Service classes through Provider for singleton and mocking
 final wallet = StateNotifierProvider<WebWallet, PublicKey?>((ref) => WebWallet(ref.read));
@@ -50,13 +49,28 @@ class WebWallet extends StateNotifier<PublicKey?> {
     // Serialize and send
     final serialized = signed.serialize();
     final txid = await promiseToFuture(_conn.sendRawTransaction(serialized));
-    read(previousTxid).state = txid;
     return txid;
   }
 
   Future<conn.AccountInfo> refreshAccountInfo() async {
-    final info = await promiseToFuture(_conn.getAccountInfo(state!, null));
+    conn.AccountInfo? info = await promiseToFuture(_conn.getAccountInfo(state!, null));
+    if (info == null) {
+      final txid = await _conn.requestAirdrop(state!, 100000000);
+      await _conn.confirmTransaction(txid);
+    }
+    info = await promiseToFuture(_conn.getAccountInfo(state!, null));
+    if (info == null) {
+      throw Exception("Invalid address, could not locate balance or perform airdrop");
+    }
     read(accountInfo).state = info;
     return info;
+  }
+
+  Future<void> requestAirdrop({int lamports: 1000000000}) async {
+    await _conn.requestAirdrop(state!, lamports);
+  }
+
+  Future<phantom.SignedMessage> signPlaintext(String plaintext) async {
+    return await promiseToFuture(phantom.signMessage(plaintext));
   }
 }

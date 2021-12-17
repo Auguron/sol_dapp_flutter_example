@@ -18,9 +18,11 @@ class GetRecentBlockhashResponse {
 @JS('wallet.solanaWeb3.Connection')
 class Connection {
   external Connection(String url);
-  external Future<AccountInfo> getAccountInfo(PublicKey publicKey, String? commitment);
+  external Future<AccountInfo?> getAccountInfo(PublicKey publicKey, String? commitment);
   external Future<GetRecentBlockhashResponse> getRecentBlockhash();
   external Future<String> sendRawTransaction(Uint8List rawTransaction);
+  external Future<String> requestAirdrop(PublicKey to, int lamports);
+  external Future<dynamic> confirmTransaction(String signature);
 }
 
 @anonymous

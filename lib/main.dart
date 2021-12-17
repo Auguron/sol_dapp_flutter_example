@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:js' as js;
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:sol_dapp_flutter_test/web_wallet.dart';
 
@@ -82,9 +84,12 @@ class HomePage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lamports = ref.watch(accountInfo).state?.lamports.toString() ?? '';
     final address = ref.watch(wallet)?.toBase58() ?? '';
-    final previousTx = ref.watch(previousTxid).state;
-    final url =
-        previousTx.isNotEmpty ? 'https://explorer.solana.com/tx/$previousTx?cluster=devnet' : '';
+    //final previousTx = ref.watch(previousTxid).state;
+    final previousTx = useState('');
+    final url = previousTx.value.isNotEmpty
+        ? 'https://explorer.solana.com/tx/$previousTx?cluster=devnet'
+        : '';
+    final previousSignedPlaintext = useState('');
     return Container(
       padding: EdgeInsets.all(15),
       //constraints: BoxConstraints(maxWidth: 600),
@@ -97,20 +102,36 @@ class HomePage extends HookConsumerWidget {
           _info("Balance", lamports, context),
           SizedBox(height: 10),
           ElevatedButton(
+            child: Text("Airdrop"),
+            onPressed: () => ref.read(wallet.notifier).requestAirdrop(),
+          ),
+          SizedBox(height: 30),
+          ElevatedButton(
             child: Text("Refresh Account Info"),
             onPressed: () => ref.read(wallet.notifier).refreshAccountInfo(),
           ),
           SizedBox(height: 30),
           ElevatedButton(
             child: Text("Send Memo Transaction"),
-            onPressed: () => ref.read(wallet.notifier).confirmAndSendMemo("Hello world"),
+            onPressed: () => ref
+                .read(wallet.notifier)
+                .confirmAndSendMemo("Hello world")
+                .then((txid) => previousTx.value = txid),
           ),
           SizedBox(height: 10),
-          _info("Previous Transaction", previousTx, context),
+          _info("Previous Transaction", previousTx.value, context),
           SizedBox(height: 10),
           ElevatedButton(
               child: Text("View in Explorer: "),
               onPressed: () => url.isNotEmpty ? js.context.callMethod('open', [url]) : null),
+          SizedBox(height: 30),
+          _info("Previous Signed Message", previousSignedPlaintext.value, context),
+          SizedBox(height: 10),
+          ElevatedButton(
+              child: Text("Sign utf8 plaintext"),
+              onPressed: () => ref.read(wallet.notifier).signPlaintext("Hello world").then(
+                  (signedMessage) =>
+                      previousSignedPlaintext.value = base64.encode(signedMessage.signature)))
         ],
       ),
     );
